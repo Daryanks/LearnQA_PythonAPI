@@ -17,3 +17,4 @@ class BaseCase:
             assert False, f"Response is not in JSON format. Response test is {response.text}"
 
         assert name in response_as_dict, f"Response JSON doesnt have any key {name}"
+        return response_as_dict[name]
