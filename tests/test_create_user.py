@@ -1,13 +1,17 @@
-from random import random
 
-import requests
 import pytest
+import json
 from lib.base_case import BaseCase
 from lib.assertions import Assertions
+from lib.my_requests import MyRequests
+import allure
 
-
-class TestCreateUser:
+@allure.feature("LearnQA")
+@allure.epic("Create user cases")
+class TestCreateUser(BaseCase):
     params = ['password', 'username', 'firstName', 'lastName', 'email']
+
+    @allure.description("This test create user with incorrect email without @")
     def test_create_user_with_incorrect_email(self):
         email = 'dkarazanova.examle.com'
         data = {
@@ -18,11 +22,12 @@ class TestCreateUser:
             'email': email
         }
 
-        response = requests.post("https://playground.learnqa.ru/api/user/", data=data)
+        response = MyRequests.post("/user/", data=data)
 
         Assertions.assert_code_status(response, 400)
         assert response.content.decode("utf-8") == f"Invalid email format", f'Unexpected content {response.content}'
 
+    @allure.description("This test create user with short name")
     def test_create_user_with_short_name(self):
         username = 'l'
         data = {
@@ -33,16 +38,17 @@ class TestCreateUser:
             'email': 'dkarazanova@examle.com'
         }
 
-        response = requests.post("https://playground.learnqa.ru/api/user/", data=data)
+        response = MyRequests.post("/user/", data=data)
 
         Assertions.assert_code_status(response, 400)
-        assert response.content.decode("utf-8") == f"The value of 'username' field is too short", f'Unexpected content {response.content}'
+        assert json.loads(response.content.decode("utf-8"))['error'] == f"The value of 'username' field is too short", f'Unexpected content {response.content}'
 
+    @allure.description("This test create user with long name")
     def test_create_user_with_long_name(self):
         username = ''
         for i in range(0, 255, 1):
              username = username + 'l'
-        #print(len(username))
+
         data = {
             'password': '123',
             'username': username,
@@ -51,14 +57,16 @@ class TestCreateUser:
             'email': 'dkarazanova@examle.com'
         }
 
-        response = requests.post("https://playground.learnqa.ru/api/user/", data=data)
+        response = MyRequests.post("/user/", data=data)
 
         Assertions.assert_code_status(response, 400)
         assert response.content.decode(
             "utf-8") == f"The value of 'username' field is too long", f'Unexpected content {response.content}'
 
+    @allure.description("This test create user without one fields")
     @pytest.mark.parametrize('params', params)
     def test_create_user_without_one_field(self, params):
+        allure.dynamic.parameter('params', '{params}')
         data = {
             'password': '123',
             'username': 'learnqa',
@@ -68,7 +76,7 @@ class TestCreateUser:
         }
 
         del data[params]
-        response = requests.post("https://playground.learnqa.ru/api/user/", data=data)
+        response = MyRequests.post("/user/", data=data)
 
         Assertions.assert_code_status(response, 400)
         assert response.content.decode(
